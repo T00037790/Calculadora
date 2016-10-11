@@ -2,113 +2,236 @@ package com.example.alvaro.calculadora;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
+
+public class MainActivity extends AppCompatActivity {
 
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+    private TextView output;
 
-    private static final String DEBUG_TAG = "HttpExample";
 
-    private TextView textView;
-    private Button button;
+
+    private double actualvalue;
+    private double lastvalue;
+
+
+    private boolean decimal = false;
+
+    public static final int any_op = 0;
+    public static final int sum_op = 1;
+    public static final int substraccion_op = 2;
+    public static final int multiplication_op = 3;
+    public static final int division_op = 4;
+
+
+    private int op;
+
+
+    public void operate() {
+        String temporal;
+
+        switch(op) {
+            case division_op:
+                if (actualvalue == 0) {
+                    delete();
+                    return;
+                }
+                actualvalue = lastvalue / actualvalue;
+                break;
+            case multiplication_op:
+                actualvalue = lastvalue * actualvalue;
+                break;
+            case substraccion_op:
+                actualvalue = lastvalue - actualvalue;
+                break;
+            case sum_op:
+                actualvalue = lastvalue + actualvalue;
+                break;
+            default:
+                
+                return;
+        }
+
+        lastvalue = 0;
+        temporal = Double.toString(actualvalue);
+        decimal = temporal.contains(".");
+        op = any_op;
+        this.output.setText(temporal);
+    }
+
+    public void division() {
+        if (op != any_op) {
+            return;
+        }
+
+        op = division_op;
+
+        lastvalue = actualvalue;
+        actualvalue = 0.0;
+
+        output.setText("0");
+    }
+
+    public void mult() {
+        if (op != any_op) {
+            
+            return;
+        }
+
+        op = multiplication_op;
+
+        lastvalue = actualvalue;
+        actualvalue = 0.0;
+
+        output.setText("0");
+        
+    }
+
+    public void rest() {
+        if (op != any_op) {
+          
+            return;
+        }
+
+        op = substraccion_op;
+
+        lastvalue = actualvalue;
+        actualvalue = 0.0;
+
+        output.setText("0");
+      
+    }
+
+    public void sum() {
+        if (op != any_op) {
+           
+            return;
+        }
+
+        op = sum_op;
+
+        lastvalue = actualvalue;
+        actualvalue = 0.0;
+
+        output.setText("0");
+       
+    }
+    
+    public void digito(String digito) {
+        String resultado = this.output.getText().toString().trim();
+        double valor = 0.0;
+
+        if (digito == "." && decimal) {
+            return;
+        }
+
+        if (resultado.compareTo("") == 0 || resultado.compareTo("0") == 0) {
+            if (digito == ".") {
+                this.output.setText("0.");
+                decimal = true;
+                actualvalue = 0;
+            } else {
+                this.output.setText(digito);
+                actualvalue = Double.parseDouble(digito);
+            }
+
+            return;
+        }
+
+        resultado = resultado + digito;
+
+        try {
+            valor = Double.valueOf(resultado);
+        } catch (NumberFormatException e) {
+            delete();
+            return;
+        }
+
+        this.output.setText(resultado);
+        actualvalue = valor;
+    }
+
+  
+    public void delete() {
+        output.setText("0");
+
+        actualvalue = 0;
+        lastvalue = 0;
+        decimal = false;
+
+        op = any_op;
+    
+    }
+    
+    public void pressedButton(View boton) {
+        
+        Button b = null;
+        String operacion;
+
+        if (boton == null) {
+            return;
+        }
+
+        try {
+            b = (Button) boton;
+        } catch (ClassCastException e) {
+            return;
+        }
+
+        operacion = b.getText().toString();
+        switch(operacion) {
+            case "0":
+            case "1":
+            case "2":
+            case "3":
+            case "4":
+            case "5":
+            case "6":
+            case "7":
+            case "8":
+            case "9":
+            case ".":
+                digito(operacion);
+                break;
+            case "+":
+                sum();
+                break;
+            case "-":
+                rest();
+                break;
+            case "x":
+                mult();
+                break;
+            case "/":
+                division();
+                break;
+            case "=":
+                operate();
+                break;
+            default:
+
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        button=(Button) findViewById(R.id.button29);
-        button.setOnClickListener(this);
-
-    }
-    public void myClickHandler(View view) {
-
-    }
-
-    @Override
-    public void onClick(View view) {
-        String stringUrl = "http://162.243.64.94/dm.php";
-        ConnectivityManager connMgr = (ConnectivityManager)
-                getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-        if (networkInfo != null && networkInfo.isConnected()) {
-            new DownloadWebpageTask().execute(stringUrl);
-        } else {
-            textView.setText("No network connection available.");
-        }
-    }
-
-    private class DownloadWebpageTask extends AsyncTask<String, Void, String> {
-        @Override
-        protected String doInBackground(String... urls) {
-
-            // params comes from the execute() call: params[0] is the url.
-            try {
-                return downloadUrl(urls[0]);
-            } catch (IOException e) {
-                return "Unable to retrieve web page. URL may be invalid.";
+        output = (TextView) findViewById(R.id.resultado);
+        output.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                delete();
             }
-        }
-        // onPostExecute displays the results of the AsyncTask.
-        @Override
-        protected void onPostExecute(String result) {
-            textView.setText(result);
-        }
-        private String downloadUrl(String myurl) throws IOException {
-            InputStream is = null;
-            // Only display the first 500 characters of the retrieved
-            // web page content.
-            int len = 500;
-
-            try {
-                URL url = new URL(myurl);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setReadTimeout(10000 /* milliseconds */);
-                conn.setConnectTimeout(15000 /* milliseconds */);
-                conn.setRequestMethod("GET");
-                conn.setDoInput(true);
-                // Starts the query
-                conn.connect();
-                int response = conn.getResponseCode();
-                Log.d(DEBUG_TAG, "The response is: " + response);
-                is = conn.getInputStream();
-
-                // Convert the InputStream into a string
-                String contentAsString = readIt(is, len);
-                return contentAsString;
-
-                // Makes sure that the InputStream is closed after the app is
-                // finished using it.
-            } finally {
-                if (is != null) {
-                    is.close();
-                }
-            }
-        }
-        public String readIt(InputStream stream, int len) throws IOException, UnsupportedEncodingException {
-            Reader reader = null;
-            reader = new InputStreamReader(stream, "UTF-8");
-            char[] buffer = new char[len];
-            reader.read(buffer);
-            return new String(buffer);
-        }
+        });
+        output.setText("0");
+        lastvalue = 0.0;
+        actualvalue = 0.0;
+        decimal = false;
+        op = any_op;
     }
-
 }
